@@ -22,7 +22,6 @@ const EnquiryForm: React.FC = () => {
       return;
     }
 
-
     if (!title || !category || !agree) {
       setError('Title, category, and agreement are required.');
       return;
@@ -35,45 +34,28 @@ const EnquiryForm: React.FC = () => {
     formData.append('title', title);
     formData.append('description', description);
     formData.append('category', category);
+    formData.append('userId', user._id); // Important for backend save
 
-   
     if (file) {
       formData.append('file', file);
     }
-
-  
-    formData.append('userId', user._id);
 
     try {
       const token = localStorage.getItem('token');
       const res = await fetch('https://enquiry-management-backend.vercel.app/api/enquiries', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token || ''}`,
         },
         body: formData,
       });
 
-      let responseData;
-      const contentType = res.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        responseData = await res.json();
-      } else {
-        responseData = await res.text();
-      }
+      const responseData = await res.json();
 
       if (!res.ok) {
-        throw new Error(
-          typeof responseData === 'string'
-            ? responseData
-            : responseData.message || 'Submission failed'
-        );
+        throw new Error(responseData.message || 'Submission failed');
       }
-      setTitle('');
-      setDescription('');
-      setCategory('');
-      setFile(null);
-      setAgree(false);
+
       alert('Enquiry submitted successfully!');
       navigate('/');
     } catch (err) {
@@ -89,6 +71,7 @@ const EnquiryForm: React.FC = () => {
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-lg bg-white rounded-xl shadow-2xl p-8 space-y-6"
+        encType="multipart/form-data"
       >
         <h2 className="text-2xl font-bold text-center">Submit an Enquiry</h2>
         {error && <p className="text-red-600 p-2 bg-red-50 rounded-md">{error}</p>}
@@ -97,7 +80,7 @@ const EnquiryForm: React.FC = () => {
           type="text"
           placeholder="Title *"
           value={title}
-          onChange={e => setTitle(e.target.value)}
+          onChange={(e) => setTitle(e.target.value)}
           className="search-bar w-full p-3 border rounded-md"
           required
         />
@@ -105,14 +88,14 @@ const EnquiryForm: React.FC = () => {
         <textarea
           placeholder="Description"
           value={description}
-          onChange={e => setDescription(e.target.value)}
+          onChange={(e) => setDescription(e.target.value)}
           className="search-bar w-full p-3 border rounded-md"
           rows={4}
         />
 
         <select
           value={category}
-          onChange={e => setCategory(e.target.value)}
+          onChange={(e) => setCategory(e.target.value)}
           className="search-bar w-full p-3 border rounded-md"
           required
         >
@@ -126,7 +109,7 @@ const EnquiryForm: React.FC = () => {
           <label className="block mb-1 text-gray-700">Attachment (optional)</label>
           <input
             type="file"
-            onChange={e => setFile(e.target.files?.[0] || null)}
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
             className="w-full p-2 border rounded-md"
           />
         </div>
@@ -136,7 +119,7 @@ const EnquiryForm: React.FC = () => {
             type="checkbox"
             id="agree"
             checked={agree}
-            onChange={e => setAgree(e.target.checked)}
+            onChange={(e) => setAgree(e.target.checked)}
             className="mt-1 mr-2"
             required
           />
@@ -147,8 +130,9 @@ const EnquiryForm: React.FC = () => {
 
         <button
           type="submit"
-          className={`w-full py-3 text-white font-semibold rounded-lg transition ${loading ? 'bg-gray-500 cursor-not-allowed' : 'bg-blue-900 hover:bg-blue-800'
-            }`}
+          className={`w-full py-3 text-white font-semibold rounded-lg transition ${
+            loading ? 'bg-gray-500 cursor-not-allowed' : 'bg-blue-900 hover:bg-blue-800'
+          }`}
           disabled={loading}
         >
           {loading ? 'Submitting...' : 'Submit Enquiry'}
