@@ -268,21 +268,22 @@ button:focus {
   box-shadow: 0 0 0 2px #2563eb33;
 }
 
+/* === Mobile (≤768px) === */
 @media (max-width: 768px) {
   .inkblue-card {
     padding: 1.5rem 1rem;
     max-width: 100%;
-    box-sizing: border-box;
     border-radius: 1rem;
   }
 
   .inkblue-heading {
     font-size: 1.5rem;
+    text-align: center;
   }
 
   .inkblue-btn {
     font-size: 1rem;
-    padding: 0.75rem 0;
+    padding: 0.75rem;
   }
 
   .user-dashboard-nav {
@@ -297,8 +298,7 @@ button:focus {
   }
 
   .user-dashboard-nav-link {
-    margin-left: 0;
-    margin-bottom: 0.5rem;
+    margin: 0.25rem 0;
     width: 100%;
     text-align: center;
   }
@@ -312,20 +312,65 @@ button:focus {
     margin-bottom: 0.75rem;
   }
 
-  .table th,
-  .table td {
-    padding: 0.75rem;
-    font-size: 0.95rem;
-  }
-
   .table {
+    overflow-x: auto;
+    font-size: 0.85rem;
     box-shadow: none;
     border-radius: 0;
-    overflow-x: auto;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.5rem;
   }
 
   .toggle-btn {
-    font-size: 0.9rem;
     padding: 0.3rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+
+/* === Tablet (769px–1024px) === */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .inkblue-card {
+    padding: 2rem 1.5rem;
+    max-width: 90%;
+    border-radius: 1.25rem;
+  }
+
+  .inkblue-heading {
+    font-size: 1.75rem;
+  }
+
+  .user-dashboard-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+  }
+
+  .user-dashboard-nav-link {
+    margin: 0;
+    padding: 0.4rem 1rem;
+    font-size: 1rem;
+  }
+
+  .category-dropdown,
+  .status-dropdown,
+  .sort-dropdown,
+  .search-bar {
+    width: 48%;
+    margin-bottom: 1rem;
+  }
+
+  .table {
+    font-size: 0.95rem;
+    border-radius: 0.5rem;
+  }
+
+  .toggle-btn {
+    font-size: 0.95rem;
+    padding: 0.4rem 1.25rem;
   }
 }
