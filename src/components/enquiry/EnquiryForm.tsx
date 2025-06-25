@@ -22,7 +22,7 @@ const EnquiryForm: React.FC = () => {
       return;
     }
 
-    if (!title || !category || !agree) {
+    if (!title.trim() || !category.trim() || !agree) {
       setError('Title, category, and agreement are required.');
       return;
     }
@@ -31,10 +31,10 @@ const EnquiryForm: React.FC = () => {
     setError('');
 
     const formData = new FormData();
-    formData.append('title', title);
-    formData.append('description', description);
-    formData.append('category', category);
-    formData.append('userId', user._id); // Important for backend save
+    formData.append('title', title.trim());
+    formData.append('description', description.trim());
+    formData.append('category', category.trim());
+    formData.append('userId', user._id); // important for backend save
 
     if (file) {
       formData.append('file', file);
@@ -42,6 +42,7 @@ const EnquiryForm: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
+
       const res = await fetch('https://enquiry-management-backend.vercel.app/api/enquiries', {
         method: 'POST',
         headers: {
@@ -53,11 +54,12 @@ const EnquiryForm: React.FC = () => {
       const responseData = await res.json();
 
       if (!res.ok) {
-        throw new Error(responseData.message || 'Submission failed');
+        const errMsg = responseData.message || responseData.error || 'Submission failed';
+        throw new Error(errMsg);
       }
 
       alert('Enquiry submitted successfully!');
-      navigate('/');
+      setTimeout(() => navigate('/'), 1000);
     } catch (err) {
       setError((err as Error).message || 'Failed to submit enquiry. Please try again.');
       console.error('Submission error:', err);
@@ -67,21 +69,26 @@ const EnquiryForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-lg bg-white rounded-xl shadow-2xl p-8 space-y-6"
         encType="multipart/form-data"
       >
         <h2 className="text-2xl font-bold text-center">Submit an Enquiry</h2>
-        {error && <p className="text-red-600 p-2 bg-red-50 rounded-md">{error}</p>}
+
+        {error && (
+          <p className="text-red-600 p-2 bg-red-50 border border-red-200 rounded-md">
+            {error}
+          </p>
+        )}
 
         <input
           type="text"
           placeholder="Title *"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="search-bar w-full p-3 border rounded-md"
+          className="w-full p-3 border rounded-md focus:outline-none focus:ring focus:border-blue-300"
           required
         />
 
@@ -89,17 +96,19 @@ const EnquiryForm: React.FC = () => {
           placeholder="Description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="search-bar w-full p-3 border rounded-md"
+          className="w-full p-3 border rounded-md focus:outline-none focus:ring focus:border-blue-300"
           rows={4}
         />
 
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="search-bar w-full p-3 border rounded-md"
+          className="w-full p-3 border rounded-md focus:outline-none focus:ring focus:border-blue-300"
           required
         >
-          <option value="">Select category *</option>
+          <option value="" disabled>
+            Select category *
+          </option>
           <option value="feedback">Feedback</option>
           <option value="issues">Issues</option>
           <option value="feature requests">Feature Requests</option>
@@ -109,6 +118,7 @@ const EnquiryForm: React.FC = () => {
           <label className="block mb-1 text-gray-700">Attachment (optional)</label>
           <input
             type="file"
+            accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
             onChange={(e) => setFile(e.target.files?.[0] || null)}
             className="w-full p-2 border rounded-md"
           />
@@ -130,10 +140,12 @@ const EnquiryForm: React.FC = () => {
 
         <button
           type="submit"
-          className={`w-full py-3 text-white font-semibold rounded-lg transition ${
-            loading ? 'bg-gray-500 cursor-not-allowed' : 'bg-blue-900 hover:bg-blue-800'
-          }`}
           disabled={loading}
+          className={`w-full py-3 text-white font-semibold rounded-lg transition ${
+            loading
+              ? 'bg-gray-500 cursor-not-allowed'
+              : 'bg-blue-900 hover:bg-blue-800'
+          }`}
         >
           {loading ? 'Submitting...' : 'Submit Enquiry'}
         </button>
