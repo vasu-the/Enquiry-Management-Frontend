@@ -1,300 +1,237 @@
 import React, { useEffect, useState } from 'react';
-import '../index.css';
 
-type User = {
+interface User {
+  _id: string;
+  fullName: string;
+  email: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+interface Enquiry {
+  _id: string;
+  title: string;
+  category: string;
+  description: string;
+  fileUrl?: string;
+  createdAt: string;
+  user?: {
     _id: string;
     fullName: string;
     email: string;
-    isActive: boolean;
-    createdAt: string;
-};
-
-type Enquiry = {
-    _id: string;
-    title: string;
-    description: string;
-    category: string;
-    fileUrl: string;
-    createdAt: string;
-    user: {
-        _id: string;
-        fullName: string;
-        email: string;
-    } | null;
-    userId?: any;
-};
+  };
+}
 
 const AdminDashboard: React.FC = () => {
-    const [tab, setTab] = useState<'users' | 'enquiries'>('users');
-    const [users, setUsers] = useState<User[]>([]);
-    const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [search, setSearch] = useState('');
-    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
-    const [sortAsc, setSortAsc] = useState(false);
-    const [enquirySearch, setEnquirySearch] = useState('');
-    const [categoryFilter, setCategoryFilter] = useState<'all' | 'feedback' | 'issues' | 'feature requests'>('all');
+  const [users, setUsers] = useState<User[]>([]);
+  const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
+  const [tab, setTab] = useState<'users' | 'enquiries'>('users');
+  const [search, setSearch] = useState('');
+  const [enquirySearch, setEnquirySearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-    const token = localStorage.getItem('token');
+  const token = localStorage.getItem('token');
 
-    useEffect(() => {
-        if (tab === 'users') {
-            setLoading(true);
-            fetch('https://enquiry-management-backend.vercel.app/api/admin/users', {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-                .then(res => res.json())
-                .then(data => setUsers(data.data || []))
-                .catch(err => {
-                    console.error('User fetch error:', err);
-                    setUsers([]);
-                })
-                .finally(() => setLoading(false));
-        }
-    }, [tab, token]);
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (tab === 'enquiries') {
-            console.log('[AdminDashboard] Fetching enquiries...');
-            setLoading(true);
+  useEffect(() => {
+    fetch('https://enquiry-management-backend.vercel.app/admin/users', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(res => res.json())
+      .then(data => setUsers(data.data || []));
 
-            fetch('https://enquiry-management-backend.vercel.app/api/admin/enquiries', {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-                .then(res => {
-                    console.log('[AdminDashboard] Enquiries response status:', res.status);
-                    return res.json().then(data => {
-                        console.log('[AdminDashboard] Enquiries response data:', data);
-                        return { status: res.status, data };
-                    });
-                })
-                .then(({ status, data }) => {
-                    if (status !== 200) {
-                        throw new Error(data.message || `Failed to fetch enquiries (status ${status})`);
-                    }
+    fetch('https://enquiry-management-backend.vercel.app/api/admin/enquiries', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(res => res.json())
+      .then(data => setEnquiries(data.data || []));
+  }, [token]);
 
-                    console.log('[AdminDashboard] Raw enquiries data:', data);
+  const toggleStatus = async (id: string) => {
+    await fetch(`https://enquiry-management-backend.vercel.app/api/admin/users/${id}/status`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-                    // Correctly map user data
-                    const formatted = (data.data || []).map((enq: any) => {
-                        console.log('[AdminDashboard] Processing enquiry:', enq._id);
-                        console.log('[AdminDashboard] User data in enquiry:', enq.userId);
-
-                        return {
-                            ...enq,
-                            user: enq.userId ? {
-                                _id: enq.userId._id,
-                                fullName: enq.userId.fullName,
-                                email: enq.userId.email
-                            } : null
-                        };
-                    });
-
-                    console.log('[AdminDashboard] Formatted enquiries:', formatted);
-                    setEnquiries(formatted);
-                })
-                .catch(err => {
-                    console.error('[AdminDashboard] Error fetching enquiries:', err);
-                    setEnquiries([]);
-                })
-                .finally(() => {
-                    console.log('[AdminDashboard] Enquiries fetch completed');
-                    setLoading(false);
-                });
-        }
-    }, [tab]);
-
-    const toggleStatus = async (id: string) => {
-        await fetch(`https://enquiry-management-backend.vercel.app/api/admin/users/${id}/status`, {
-            method: 'PATCH',
-            headers: { Authorization: `Bearer ${token}` }
-        });
-
-        setUsers(prev =>
-            prev.map(u => (u._id === id ? { ...u, isActive: !u.isActive } : u))
-        );
-    };
-
-    const filteredUsers = users
-        .filter(u =>
-            statusFilter === 'all' ||
-            (statusFilter === 'active' && u.isActive) ||
-            (statusFilter === 'inactive' && !u.isActive)
-        )
-        .filter(u =>
-            u.fullName.toLowerCase().includes(search.toLowerCase()) ||
-            u.email.toLowerCase().includes(search.toLowerCase())
-        )
-        .sort((a, b) =>
-            sortAsc
-                ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-                : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-
-    const filteredEnquiries = enquiries
-        .filter(e =>
-            categoryFilter === 'all' || e.category === categoryFilter
-        )
-        .filter(e =>
-            e.title.toLowerCase().includes(enquirySearch.toLowerCase()) ||
-            e.user?.fullName?.toLowerCase().includes(enquirySearch.toLowerCase()) ||
-            e.user?.email?.toLowerCase().includes(enquirySearch.toLowerCase())
-        );
-
-    return (
-        <div className="min-h-screen flex bg-gray-100">
-            <aside className="w-56 bg-white shadow-2xl p-6 flex flex-col space-y-4">
-                <h2 className="text-xl font-bold mb-4 text-center">Admin Panel</h2>
-                <button onClick={() => setTab('users')} className={`py-2 px-4 rounded text-left ${tab === 'users' ? 'bg-blue-900 text-white' : 'bg-gray-200 text-blue-900'}`}>Users</button>
-                <button onClick={() => setTab('enquiries')} className={`py-2 px-4 rounded text-left ${tab === 'enquiries' ? 'bg-blue-900 text-white' : 'bg-gray-200 text-blue-900'}`}>Enquiries</button>
-            </aside>
-
-            <main className="flex-1 p-8">
-                <div className="bg-white rounded-xl shadow-2xl p-8 max-w-6xl mx-auto">
-                    {loading && <div className="text-center text-gray-500">Loading...</div>}
-
-                    {tab === 'users' ? (
-                        <>
-                            <div className="flex flex-wrap gap-4 mb-4">
-                                <input
-                                    type="text"
-                                    placeholder="Search by name or email"
-                                    value={search}
-                                    onChange={e => setSearch(e.target.value)}
-                                    className="search-bar"
-                                />
-                                <select
-                                    className="status-dropdown"
-                                    value={statusFilter}
-                                    onChange={e => setStatusFilter(e.target.value as any)}
-                                >
-                                    <option value="all">All Status</option>
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
-                                </select>
-                                <button
-                                    className="border p-2 rounded bg-blue-100 text-blue-900"
-                                    onClick={() => setSortAsc(s => !s)}
-                                >
-                                    Sort: {sortAsc ? '↑' : '↓'}
-                                </button>
-                            </div>
-
-                            {filteredUsers.length === 0 ? (
-                                <div className="text-center text-gray-400">No users found.</div>
-                            ) : (
-                                <table className="table">
-                                    <thead>
-                                        <tr>
-                                            <th>S. No.</th>
-                                            <th>Full Name</th>
-                                            <th>Email</th>
-                                            <th>Signup Date</th>
-                                            <th>Status</th>
-                                            <th>Toggle</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {filteredUsers.map((u, i) => (
-                                            <tr key={u._id} className="text-center">
-                                                <td>{i + 1}</td>
-                                                <td>{u.fullName}</td>
-                                                <td>{u.email}</td>
-                                                <td>{new Date(u.createdAt).toLocaleString()}</td>
-                                                <td>{u.isActive ? 'Active' : 'Inactive'}</td>
-                                                <td>
-                                                    <button
-                                                        onClick={() => toggleStatus(u._id)}
-                                                        className={`toggle-btn ${u.isActive ? '' : 'off'}`}
-                                                    >
-                                                        {u.isActive ? 'Active' : 'Inactive'}
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            )}
-                        </>
-                    ) : (
-                        <>
-                            <div className="flex flex-wrap gap-4 mb-4">
-                                <input
-                                    type="text"
-                                    placeholder="Search by title, name or email"
-                                    value={enquirySearch}
-                                    onChange={e => setEnquirySearch(e.target.value)}
-                                    className="search-bar"
-                                />
-                                <select
-                                    className="category-dropdown"
-                                    value={categoryFilter}
-                                    onChange={e => setCategoryFilter(e.target.value as any)}
-                                >
-                                    <option value="all">All Categories</option>
-                                    <option value="feedback">Feedback</option>
-                                    <option value="issues">Issues</option>
-                                    <option value="feature requests">Feature Requests</option>
-                                </select>
-                            </div>
-
-                            {filteredEnquiries.length === 0 ? (
-                                <div className="text-center text-gray-400">No enquiries found.</div>
-                            ) : (
-                                <table className="table">
-                                    <thead>
-                                        <tr>
-                                            <th>S. No.</th>
-                                            <th>Enquiry ID</th>
-                                            <th>User Name</th>
-                                            <th>Email</th>
-                                            <th>Title</th>
-                                            <th>Category</th>
-                                            <th>Submission Date</th>
-                                            <th>File</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {filteredEnquiries.map((e, i) => (
-                                            <tr key={e._id} className="text-center">
-                                                <td>{i + 1}</td>
-                                                <td>{e._id}</td>
-                                                <td>{e.user?.fullName ?? 'N/A'}</td>
-                                                <td>{e.user?.email ?? 'N/A'}</td>
-                                                <td>{e.title}</td>
-                                                <td>{e.category}</td>
-                                                <td>{new Date(e.createdAt).toLocaleString()}</td>
-                                                <td>
-                                                    {e.fileUrl ? (
-                                                        <>
-                                                            <a
-                                                                href={`https://enquiry-management-backend.vercel.app/download/${e.fileUrl}`}
-                                                                className="text-blue-900 underline mr-2"
-                                                            >
-                                                                Download
-                                                            </a>
-                                                            <a
-                                                                href={`https://enquiry-management-backend.vercel.app/uploads/${e.fileUrl}`}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="text-green-700 underline"
-                                                            >
-                                                                View
-                                                            </a>
-                                                        </>
-                                                    ) : '—'}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            )}
-                        </>
-                    )}
-                </div>
-            </main>
-        </div>
+    setUsers(prev =>
+      prev.map(user =>
+        user._id === id ? { ...user, isActive: !user.isActive } : user
+      )
     );
+  };
+
+  const filteredUsers = users
+    .filter(user =>
+      user.fullName.toLowerCase().includes(search.toLowerCase()) ||
+      user.email.toLowerCase().includes(search.toLowerCase())
+    )
+    .filter(user =>
+      statusFilter === 'all'
+        ? true
+        : statusFilter === 'active'
+        ? user.isActive
+        : !user.isActive
+    );
+
+  const filteredEnquiries = enquiries
+    .filter(e => categoryFilter === 'all' || e.category === categoryFilter)
+    .filter(e =>
+      e.title.toLowerCase().includes(enquirySearch.toLowerCase()) ||
+      e.user?.fullName?.toLowerCase().includes(enquirySearch.toLowerCase()) ||
+      e.user?.email?.toLowerCase().includes(enquirySearch.toLowerCase())
+    )
+    .sort((a, b) =>
+      sortOrder === 'asc'
+        ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+  return (
+    <div className="p-10 font-serif bg-gray-100 min-h-screen">
+      <div className="mb-6 flex gap-4">
+        <button
+          onClick={() => setTab('users')}
+          className={`px-6 py-2 rounded shadow-md transition-all duration-300 text-white font-semibold ${tab === 'users' ? 'bg-indigo-600' : 'bg-gray-400 hover:bg-gray-500'}`}
+        >
+          Users
+        </button>
+        <button
+          onClick={() => setTab('enquiries')}
+          className={`px-6 py-2 rounded shadow-md transition-all duration-300 text-white font-semibold ${tab === 'enquiries' ? 'bg-indigo-600' : 'bg-gray-400 hover:bg-gray-500'}`}
+        >
+          Enquiries
+        </button>
+      </div>
+
+      {tab === 'users' ? (
+        <div className="bg-white p-6 rounded shadow-md">
+          <h2 className="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">User Management</h2>
+          <div className="flex items-center gap-4 mb-4">
+            <input
+              type="text"
+              placeholder="Search name or email"
+              className="border border-gray-300 p-2 rounded w-full max-w-md"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            <select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+              className="border border-gray-300 p-2 rounded"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+          <table className="w-full table-auto border text-sm rounded overflow-hidden">
+            <thead className="bg-indigo-100 text-indigo-800 text-sm uppercase tracking-wider">
+              <tr className="text-left">
+                <th className="p-2">S.No</th>
+                <th className="p-2">Full Name</th>
+                <th className="p-2">Email</th>
+                <th className="p-2">Status</th>
+                <th className="p-2">Created At</th>
+                <th className="p-2">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredUsers.map((user, i) => (
+                <tr key={user._id} className="border-t border-gray-200 hover:bg-indigo-50">
+                  <td className="p-2">{i + 1}</td>
+                  <td className="p-2">{user.fullName}</td>
+                  <td className="p-2">{user.email}</td>
+                  <td className="p-2">
+                    <span className={`px-2 py-1 text-xs rounded font-medium ${user.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      {user.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td className="p-2">{new Date(user.createdAt).toLocaleDateString()}</td>
+                  <td className="p-2">
+                    <button
+                      onClick={() => toggleStatus(user._id)}
+                      className={`px-3 py-1 rounded font-medium transition shadow
+                        ${user.isActive
+                          ? 'bg-red-500 hover:bg-red-600 text-white'
+                          : 'bg-green-500 hover:bg-green-600 text-white'
+                        }`}
+                    >
+                      {user.isActive ? 'Deactivate' : 'Activate'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="bg-white p-6 rounded shadow-md">
+          <h2 className="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">Enquiries</h2>
+          <div className="flex flex-wrap gap-4 mb-4">
+            <input
+              type="text"
+              placeholder="Search title or user"
+              className="border border-gray-300 p-2 rounded w-full max-w-md"
+              value={enquirySearch}
+              onChange={e => setEnquirySearch(e.target.value)}
+            />
+            <select
+              value={categoryFilter}
+              onChange={e => setCategoryFilter(e.target.value)}
+              className="border border-gray-300 p-2 rounded"
+            >
+              <option value="all">All Categories</option>
+              {Array.from(new Set(enquiries.map(e => e.category))).map((cat, idx) => (
+                <option key={idx} value={cat}>{cat}</option>
+              ))}
+            </select>
+            <select
+              value={sortOrder}
+              onChange={e => setSortOrder(e.target.value as 'asc' | 'desc')}
+              className="border border-gray-300 p-2 rounded"
+            >
+              <option value="desc">Newest</option>
+              <option value="asc">Oldest</option>
+            </select>
+          </div>
+          <table className="w-full table-auto border text-sm rounded overflow-hidden">
+            <thead className="bg-indigo-100 text-indigo-800 text-sm uppercase tracking-wider">
+              <tr className="text-left">
+                <th className="p-2">S.No</th>
+                <th className="p-2">Title</th>
+                <th className="p-2">Category</th>
+                <th className="p-2">User</th>
+                <th className="p-2">Email</th>
+                <th className="p-2">File</th>
+                <th className="p-2">Created At</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredEnquiries.map((enq, i) => (
+                <tr key={enq._id} className="border-t border-gray-200 hover:bg-indigo-50">
+                  <td className="p-2">{i + 1}</td>
+                  <td className="p-2">{enq.title}</td>
+                  <td className="p-2">{enq.category}</td>
+                  <td className="p-2">{enq.user?.fullName || 'N/A'}</td>
+                  <td className="p-2">{enq.user?.email || 'N/A'}</td>
+                  <td className="p-2">
+                    {enq.fileUrl ? (
+                      <div className="flex gap-2">
+                        <a href={enq.fileUrl} target="_blank" rel="noreferrer" className="text-blue-600 underline">View</a>
+                        <a href={enq.fileUrl} download className="text-green-600 underline">Download</a>
+                      </div>
+                    ) : 'No File'}
+                  </td>
+                  <td className="p-2">{new Date(enq.createdAt).toLocaleDateString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default AdminDashboard;

@@ -6,6 +6,7 @@ import Dashboard from '../pages/Dashboard';
 import Admin from '../pages/Admin';
 import Login from '../pages/Login';
 import AdminLogin from '../pages/AdminLogin';
+import EnquiryForm from '../components/enquiry/EnquiryForm';
 
 const AppRoutes = () => (
   <Router>
@@ -15,6 +16,7 @@ const AppRoutes = () => (
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="/login" element={<Login />} />
+       <Route path="/enquiry" element={<EnquiryForm />} />
       <Route path="/admin-login" element={<AdminLogin />} />
     </Routes>
   </Router>
