@@ -35,13 +35,13 @@ const AdminDashboard: React.FC = () => {
   const token = localStorage.getItem('token');
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/admin/users', {
+    fetch('https://enquiry-management-backend.vercel.app/api/admin/users', {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => res.json())
       .then(data => setUsers(data.data || []));
 
-    fetch('http://localhost:5000/api/admin/enquiries', {
+    fetch('https://enquiry-management-backend.vercel.app/api/admin/enquiries', {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => res.json())
@@ -49,7 +49,7 @@ const AdminDashboard: React.FC = () => {
   }, [token]);
 
   const toggleStatus = async (id: string) => {
-    await fetch(`http://localhost:5000/api/admin/users/${id}/status`, {
+    await fetch(`https://enquiry-management-backend.vercel.app/api/admin/users/${id}/status`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${token}` },
     });
