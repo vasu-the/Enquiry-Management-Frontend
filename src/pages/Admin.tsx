@@ -35,13 +35,13 @@ const AdminDashboard: React.FC = () => {
   const token = localStorage.getItem('token');
 
   useEffect(() => {
-    fetch('https://enquiry-management-backend.vercel.app/admin/users', {
+    fetch('http://localhost:5000/api/admin/users', {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => res.json())
       .then(data => setUsers(data.data || []));
 
-    fetch('https://enquiry-management-backend.vercel.app/api/admin/enquiries', {
+    fetch('http://localhost:5000/api/admin/enquiries', {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => res.json())
@@ -49,7 +49,7 @@ const AdminDashboard: React.FC = () => {
   }, [token]);
 
   const toggleStatus = async (id: string) => {
-    await fetch(`https://enquiry-management-backend.vercel.app/api/admin/users/${id}/status`, {
+    await fetch(`http://localhost:5000/api/admin/users/${id}/status`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -198,7 +198,7 @@ const AdminDashboard: React.FC = () => {
           <table className="w-full table-auto border text-sm rounded overflow-hidden">
             <thead className="bg-indigo-100 text-indigo-800 text-sm uppercase tracking-wider">
               <tr className="text-left">
-                <th className="p-2">S.No</th>
+                <th className="p-2">s.No</th>
                 <th className="p-2">Title</th>
                 <th className="p-2">Category</th>
                 <th className="p-2">User</th>

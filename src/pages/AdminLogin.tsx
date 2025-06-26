@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { Eye, EyeOff } from 'lucide-react'; // Icons
+import { Eye, EyeOff } from 'lucide-react'; // optional: install lucide-react or use another icon lib
 
 interface LoginFormInputs {
   email: string;
@@ -22,35 +22,33 @@ const AdminLogin: React.FC = () => {
   const onSubmit = async (data: LoginFormInputs) => {
     setError('');
     try {
-      const response = await fetch('https://enquiry-management-backend.vercel.app/api/admin/login', {
+      const res = await fetch('http://localhost:5000/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
 
-      const result = await response.json();
+      const result = await res.json();
 
-      if (!response.ok) {
+      if (!res.ok) {
         setError(result.message || 'Login failed');
         return;
       }
 
-      localStorage.setItem('token', result.token); // Adjust this if backend sends differently
+      localStorage.setItem('token', result.data);
       navigate('/admin');
-    } catch (err) {
+    } catch {
       setError('Something went wrong. Please try again.');
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 to-gray-200 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 font-sans px-4">
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="bg-white p-8 md:p-10 rounded-2xl shadow-lg w-full max-w-md border"
+        className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md border border-gray-200"
       >
-        <h2 className="text-3xl font-bold text-center text-blue-700 mb-6">
-          Admin Login
-        </h2>
+        <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">Admin Login</h2>
 
         {error && (
           <div className="mb-4 bg-red-100 text-red-700 border border-red-300 rounded px-3 py-2 text-sm text-center">
@@ -58,7 +56,6 @@ const AdminLogin: React.FC = () => {
           </div>
         )}
 
-        {/* Email */}
         <div className="mb-5">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Email
@@ -69,7 +66,7 @@ const AdminLogin: React.FC = () => {
               required: 'Email is required',
               pattern: {
                 value: /^\S+@\S+$/i,
-                message: 'Invalid email format',
+                message: 'Invalid email address',
               },
             })}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -80,7 +77,6 @@ const AdminLogin: React.FC = () => {
           )}
         </div>
 
-        {/* Password */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Password
@@ -100,23 +96,21 @@ const AdminLogin: React.FC = () => {
             />
             <button
               type="button"
-              onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 hover:text-blue-600"
+              onClick={() => setShowPassword(prev => !prev)}
+              className="absolute top-2.5 right-3 text-gray-500 hover:text-gray-700"
               tabIndex={-1}
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
           {errors.password && (
-            <p className="text-red-500 text-xs mt-1">
-              {errors.password.message}
-            </p>
+            <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>
           )}
         </div>
 
         <button
           type="submit"
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition shadow-md"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition shadow"
         >
           Login
         </button>
